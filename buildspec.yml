@@ -1,0 +1,53 @@
+version: 0.2
+# ──────────────────────────────────────────────────────────────
+# react-app/buildspec.yml
+# Runs inside CodeBuild as part of the React App Pipeline.
+# Installs deps, builds the React app, packages artifacts
+# (build/ + appspec.yml + scripts/) for CodeDeploy.
+# ──────────────────────────────────────────────────────────────
+
+phases:
+
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "=== Install phase ==="
+      - node --version
+      - npm --version
+      - echo "Installing dependencies..."
+      - npm install
+
+  pre_build:
+    commands:
+      - echo "=== Pre-build phase ==="
+      - echo "Project     : $PROJECT"
+      - echo "Environment : $ENVIRONMENT"
+      - echo "Node ENV    : $NODE_ENV"
+
+  build:
+    commands:
+      - echo "=== Build phase ==="
+      - npm run build
+      - echo "React build complete."
+
+  post_build:
+    commands:
+      - echo "=== Post-build phase ==="
+      - echo "Artifact contents:"
+      - ls -la build/
+      - echo "Build packaged and ready for CodeDeploy."
+
+# ── Artifacts sent to CodeDeploy ─────────────────────────────
+# appspec.yml must be at root of artifact, build/ files go to EC2
+artifacts:
+  files:
+    - "build/**/*"
+    - appspec.yml
+    - "scripts/**/*"
+  discard-paths: no
+
+# ── Cache node_modules between builds ────────────────────────
+cache:
+  paths:
+    - node_modules/**/*
